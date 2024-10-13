@@ -4,7 +4,7 @@ import time
 import description
 
 # Bringing up the API key from GROQ
-api_key = "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"
+api_key = "Fill in your API Key"
 client = Groq(api_key=api_key)
 
 engine = pyttsx3.init()
