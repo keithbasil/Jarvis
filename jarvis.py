@@ -1,101 +1,92 @@
 from groq import Groq
 import pyttsx3
-import time
 import description
 
-# Bringing up the API key from GROQ
-api_key = "Fill in your API Key"
-client = Groq(api_key=api_key)
-
-engine = pyttsx3.init()
-
-# Printing to let the user know that the code is running
-print("I'm listening.")
-
-# Initialize conversation messages with system behavior
-
-messages = [
-    {
-        "role": "system",
-        "content": description.model, # A file where I tell the AI how to behave
-    }
-]
-
-
-# If I want to make the AI speak I can use this function
-def synthesize_speech(text):
-    engine.say(text)
-    engine.runAndWait()
-
-
-# Start the conversation loop
-while True:
-    # Asking for user to say something
-    user_input = input("User: ").strip()
-
-    # Exit condition: if the user says "go to sleep"
-    if user_input.lower() == "go to sleep":
-        messages.append({
-            "role": "user",
-            "content": user_input,
-        })
+class Jarvis:
+    def __init__(self, api_key):
+        # Initialize the Groq client with the API key
+        self.api_key = api_key
+        self.client = Groq(api_key=self.api_key)
         
-        # Try to get the AI's response
+        # Initialize the text-to-speech engine
+        self.engine = pyttsx3.init()
+        
+        # Initialize an empty list to store conversation messages
+        self.messages = []
+
+    def add_message(self, role, content):
+        # Add a new message to the conversation history
+        self.messages.append({"role": role, "content": content})
+
+    def synthesize_speech(self, text):
+        # Convert text to speech using pyttsx3
+        self.engine.say(text)
+        self.engine.runAndWait()
+
+    def get_response(self):
         try:
-            # Make a request to the AI model for a response
-            chat_completion = client.chat.completions.create(
-                messages=messages,
-                model="llama3.1-70b-8192",  # Assuming llama3 model with 70B parameters
+            # Send a request to the AI model for a response
+            chat_completion = self.client.chat.completions.create(
+                messages=self.messages,
+                model="Llama-3.1-70b-Versatile",
             )
+            return chat_completion.choices[0].message.content
+        except Exception as e:
+            # Handle any errors that occur during the request
+            print(f"Error: {str(e)}")
+            return None
 
-            # Extract the AI's response
-            response = chat_completion.choices[0].message.content
-
-            # Add AI response to the conversation history
-            messages.append({
-                "role": "assistant",
-                "content": response,
-            })
-
-            # Print the AI's response and synthesize speech
+    def respond_to_user(self, user_input):
+        # Add the user's input to the conversation history
+        self.add_message("user", user_input.strip())
+        
+        # Get the AI's response
+        response = self.get_response()
+        
+        if response:
+            # Add the AI's response to the conversation history
+            self.add_message("assistant", response)
+            
+            # Print the AI's response
             print("Jarvis:", response)
-            synthesize_speech(response)
+            
+            # Convert the AI's response to speech
+            self.synthesize_speech(response)
 
-            # Stopping the conversation because the user said go to sleep
+def main():
+    # Initialize the Jarvis instance with the API key
+    api_key = "Your API Key"
+    jarvis = Jarvis(api_key)
+
+    # Inform the user that the program is listening
+    print("I'm listening.")
+
+    while True:
+        # Prompt the user for input
+        user_input = input("User: ").strip()
+        
+        # Have Jarvis respond to the user's input
+        jarvis.respond_to_user(user_input)
+
+        # Check if the user wants to exit the conversation
+        if user_input.lower() == "go to sleep":
+            # Add the exit message to the conversation history
+            jarvis.add_message("user", user_input)
+            
+            # Get the AI's response
+            response = jarvis.get_response()
+            
+            if response:
+                # Add the AI's response to the conversation history
+                jarvis.add_message("assistant", response)
+                
+                # Print and speak the AI's response
+                print("Jarvis:", response)
+                jarvis.synthesize_speech(response)
+            
+            # Exit the loop since the user wants to go to sleep
             break
 
-        except Exception as e:
-            # Handle any errors and print them out
-            print(f"Error: {str(e)}")
-                
-                
-
-            
-        
-        except Exception as e:
-            print(f"Error: {str(e)}")
-    
-    messages.append({
-        "role": "user",
-        "content": user_input,
-    })
-
-    try:
-        chat_completion = client.chat.completions.create(
-            messages=messages,
-            model="llama3-70b-8192",
-        )
-        response = chat_completion.choices[0].message.content
-
-        messages.append({
-            "role": "assistant",
-            "content": response,
-        })
-
-        print("Jarvis:", response)
-        synthesize_speech(response)
-        
-        
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
+if __name__ == "__main__":
+    main()
+1
